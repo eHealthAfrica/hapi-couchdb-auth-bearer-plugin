@@ -3,6 +3,7 @@ var Boom = require('boom');
 
 exports.register = function(server, options, next) {
   'use strict';
+
   // This has basically just been lifted from:
   // https://github.com/hoodiehq/hoodie-server/blob/master/lib/server/plugins/api/index.js#L8
   // All credit to Hoodie Team.
@@ -42,7 +43,7 @@ exports.register = function(server, options, next) {
   }
 
   function addCorsAndBearerToken(err, res, request, reply) {
-    // console.log(reply);
+
     if (err) {
       reply(err).code(500);
       return;
@@ -107,64 +108,67 @@ exports.register = function(server, options, next) {
     });
   }
 
-  server.route({
-    method: 'POST',
-    path: '/_session/{p*}',
-    config: {
-      cors: {
-        methods: ['POST'],
-        additionalHeaders: ['Accept'],
-        origin: options.allowedOriginWhitelist
-      }
-    },
-    handler: {
-      proxy: {
-        passThrough: true,
-        mapUri: mapProxyPath,
-        onResponse: addCorsAndBearerToken
-      }
-    }
-  });
 
-  server.route({
-    method: 'GET',
-    path: '/_session',
-    config: {
-      cors: {
-        methods: ['GET'],
-        additionalHeaders: ['Accept'],
-        origin: options.allowedOriginWhitelist
+  if (options.sessions) {
+    server.route({
+      method: 'POST',
+      path: '/_session/{p*}',
+      config: {
+        cors: {
+          methods: ['POST'],
+          additionalHeaders: ['Accept'],
+          origin: options.allowedOriginWhitelist
+        }
+      },
+      handler: {
+        proxy: {
+          passThrough: true,
+          mapUri: mapProxyPath,
+          onResponse: addCorsAndBearerToken
+        }
       }
-    },
-    handler: {
-      proxy: {
-        passThrough: true,
-        mapUri: mapProxyPath,
-        onResponse: addCorsAndBearerToken
-      }
-    }
-  });
+    });
 
-  server.route({
-    method: 'DELETE',
-    path: '/_session',
-    config: {
-      cors: {
-        methods: ['DELETE'],
-        additionalHeaders: ['Accept'],
-        origin: options.allowedOriginWhitelist
+    server.route({
+      method: 'GET',
+      path: '/_session',
+      config: {
+        cors: {
+          methods: ['GET'],
+          additionalHeaders: ['Accept'],
+          origin: options.allowedOriginWhitelist
+        }
+      },
+      handler: {
+        proxy: {
+          passThrough: true,
+          mapUri: mapProxyPath,
+          onResponse: addCorsAndBearerToken
+        }
       }
-    },
-    handler: {
-      proxy: {
-        passThrough: true,
-        mapUri: mapProxyPath,
-        onResponse: addCorsAndBearerToken
-      }
-    }
-  });
+    });
 
-  server.method('bearerAuthRequestHandler', function() {
+    server.route({
+      method: 'DELETE',
+      path: '/_session',
+      config: {
+        cors: {
+          methods: ['DELETE'],
+          additionalHeaders: ['Accept'],
+          origin: options.allowedOriginWhitelist
+        }
+      },
+      handler: {
+        proxy: {
+          passThrough: true,
+          mapUri: mapProxyPath,
+          onResponse: addCorsAndBearerToken
+        }
+      }
+    });
+  }
+
+  server.method('getCouchDbBearerToken', function() {
     var request = arguments[0];
     var options;
     var next;
