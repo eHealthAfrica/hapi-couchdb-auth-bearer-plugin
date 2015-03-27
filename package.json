@@ -1,0 +1,23 @@
+{
+  "name": "hapi-couchdb-auth-bearer-plugin",
+  "version": "1.0.0",
+  "description": "Hapi CouchDB Auth Bearer Plugin",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/eHealthAfrica/hapi-couchdb-auth-bearer-plugin.git"
+  },
+  "author": "Matt Richards <matt.richards@ehealthnigeria.org>",
+  "license": "Apache-2",
+  "bugs": {
+    "url": "https://github.com/eHealthAfrica/hapi-couchdb-auth-bearer-plugin/issues"
+  },
+  "homepage": "https://github.com/eHealthAfrica/hapi-couchdb-auth-bearer-plugin",
+  "dependencies": {
+    "boom": "^2.6.1",
+    "wreck": "^5.3.0"
+  }
+}
