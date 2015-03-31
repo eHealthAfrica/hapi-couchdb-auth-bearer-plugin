@@ -3,6 +3,7 @@ var Boom = require('boom');
 
 exports.register = function(server, options, next) {
   'use strict';
+
   // This has basically just been lifted from:
   // https://github.com/hoodiehq/hoodie-server/blob/master/lib/server/plugins/api/index.js#L8
   // All credit to Hoodie Team.
@@ -16,22 +17,40 @@ exports.register = function(server, options, next) {
     port: urlParts.port
   };
 
-  function mapProxyPath (request, callback) {
-    //use the bearer token as the cookie AuthSession for couchdb:
-    if (request.headers.authorization &&
-        request.headers.authorization
-                          .substring(0, 'Bearer '.length) === 'Bearer ') {
+  function getBearerToken() {
+    var request = arguments[0];
+    var options;
+    var next;
 
-      request.headers.cookie =  'AuthSession=' +
-                                request.headers
-                                    .authorization.substring('Bearer '.length);
+    if (typeof arguments[1] === 'function') {
+      next = arguments[1];
     } else {
-      delete request.cookie;
+      options = arguments[1];
+      next = arguments[2];
     }
 
-    request.host = options.couchdb.host;
-    console.log(options.couchdb.baseUrl);
-    callback(null, options.couchdb.baseUrl + '/_session', request.headers);
+    // console.log(request.headers.authorization);
+    var token;
+    if (request.headers.authorization) {
+      token = request.headers.authorization.substring('Bearer '.length);
+    }
+    next(null, token);
+  }
+
+  function mapProxyPath (request, callback) {
+    //use the bearer token as the cookie AuthSession for couchdb:
+    getBearerToken(request, function(err, token) {
+      if (token) {
+        request.headers.cookie =  'AuthSession=' +
+                                  request.headers
+                                    .authorization.substring('Bearer '.length);
+      } else {
+        delete request.cookie;
+      }
+
+      request.host = options.couchdb.host;
+      callback(null, options.couchdb.baseUrl + '/_session', request.headers);
+    });
   }
 
   function extractToken(cookieHeader) {
@@ -42,7 +61,7 @@ exports.register = function(server, options, next) {
   }
 
   function addCorsAndBearerToken(err, res, request, reply) {
-    // console.log(reply);
+
     if (err) {
       reply(err).code(500);
       return;
@@ -107,87 +126,71 @@ exports.register = function(server, options, next) {
     });
   }
 
-  server.route({
-    method: 'POST',
-    path: '/_session/{p*}',
-    config: {
-      cors: {
-        methods: ['POST'],
-        additionalHeaders: ['Accept'],
-        origin: options.allowedOriginWhitelist
-      }
-    },
-    handler: {
-      proxy: {
-        passThrough: true,
-        mapUri: mapProxyPath,
-        onResponse: addCorsAndBearerToken
-      }
-    }
-  });
 
-  server.route({
-    method: 'GET',
-    path: '/_session',
-    config: {
-      cors: {
-        methods: ['GET'],
-        additionalHeaders: ['Accept'],
-        origin: options.allowedOriginWhitelist
+  if (options.sessions) {
+    server.route({
+      method: 'POST',
+      path: '/_session/{p*}',
+      config: {
+        cors: {
+          methods: ['POST'],
+          additionalHeaders: ['Accept'],
+          origin: options.allowedOriginWhitelist
+        }
+      },
+      handler: {
+        proxy: {
+          passThrough: true,
+          mapUri: mapProxyPath,
+          onResponse: addCorsAndBearerToken
+        }
       }
-    },
-    handler: {
-      proxy: {
-        passThrough: true,
-        mapUri: mapProxyPath,
-        onResponse: addCorsAndBearerToken
+    });
+
+    server.route({
+      method: 'GET',
+      path: '/_session',
+      config: {
+        cors: {
+          methods: ['GET'],
+          additionalHeaders: ['Accept'],
+          origin: options.allowedOriginWhitelist
+        }
+      },
+      handler: {
+        proxy: {
+          passThrough: true,
+          mapUri: mapProxyPath,
+          onResponse: addCorsAndBearerToken
+        }
       }
-    }
-  });
+    });
 
-  server.route({
-    method: 'DELETE',
-    path: '/_session',
-    config: {
-      cors: {
-        methods: ['DELETE'],
-        additionalHeaders: ['Accept'],
-        origin: options.allowedOriginWhitelist
+    server.route({
+      method: 'DELETE',
+      path: '/_session',
+      config: {
+        cors: {
+          methods: ['DELETE'],
+          additionalHeaders: ['Accept'],
+          origin: options.allowedOriginWhitelist
+        }
+      },
+      handler: {
+        proxy: {
+          passThrough: true,
+          mapUri: mapProxyPath,
+          onResponse: addCorsAndBearerToken
+        }
       }
-    },
-    handler: {
-      proxy: {
-        passThrough: true,
-        mapUri: mapProxyPath,
-        onResponse: addCorsAndBearerToken
-      }
-    }
-  });
+    });
+  }
 
-  server.method('bearerAuthRequestHandler', function() {
-    var request = arguments[0];
-    var options;
-    var next;
 
-    if (typeof arguments[1] === 'function') {
-      next = arguments[1];
-    } else {
-      options = arguments[1];
-      next = arguments[2];
-    }
 
-    if (options && options.required) {
-      if (!request.headers.authorization) {
-        return next(Boom.unauthorized());
-      }
-    }
-
-    var token;
-    if (request.headers.authorization) {
-      token = request.headers.authorization.substring('Bearer '.length);
-    }
-    next(null, token);
-  });
+  server.method('mapProxyPath', mapProxyPath);
+  server.method('addCorsAndBearerToken', addCorsAndBearerToken);
+  server.method('getBearerToken', getBearerToken);
 
   next();
 };
