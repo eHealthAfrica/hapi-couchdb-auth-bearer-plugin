@@ -13,6 +13,7 @@ npm i -S git+ssh://git@github.com:eHealthAfrica/hapi-couchdb-auth-bearer-plugin.
 ### Options
 
 - **sessions** _bool_ - enable `_session` proxy exposes GET, POST & DELETE methods on `_session` endpoint (default: false)
+
 ### Hapi Server methods
 
 - **getBearerToken(request, callback)** - extract Bearer token from request
