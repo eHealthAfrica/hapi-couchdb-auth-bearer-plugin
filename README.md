@@ -5,7 +5,7 @@ Hapi CouchDB Auth Bearer Plugin
 ## Installation
 
 ```bash
-npm i -S git+ssh://git@github.com:eHealthAfrica/hapi-couchdb-auth-bearer-plugin.git
+npm i -S hapi-couchdb-auth-bearer-plugin
 ```
 
 ## Usage
