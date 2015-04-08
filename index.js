@@ -8,7 +8,8 @@ exports.register = function(server, options, next) {
   // https://github.com/hoodiehq/hoodie-server/blob/master/lib/server/plugins/api/index.js#L8
   // All credit to Hoodie Team.
   var url = require('url');
-  var urlParts = url.parse(options.couchUrl);
+  var urlParts = url.parse(options.couchUrl || 'http://localhost:5984');
+
   options.couchdb = {
     baseUrl: urlParts.protocol + '//' + urlParts.hostname + (urlParts.port ?
                                                       ':' + urlParts.port : ''),
@@ -29,7 +30,6 @@ exports.register = function(server, options, next) {
       next = arguments[2];
     }
 
-    // console.log(request.headers.authorization);
     var token;
     if (request.headers.authorization) {
       token = request.headers.authorization.substring('Bearer '.length);
@@ -185,8 +185,6 @@ exports.register = function(server, options, next) {
       }
     });
   }
-
-
 
   server.method('mapProxyPath', mapProxyPath);
   server.method('addCorsAndBearerToken', addCorsAndBearerToken);
